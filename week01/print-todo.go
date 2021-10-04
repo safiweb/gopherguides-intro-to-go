@@ -6,6 +6,7 @@ import (
 
 func main() {
 
+    //our variables
 	var i, j, k = `"Go"`, 42, true
 
 	//print string ("Go"), int (42), bool (true)
