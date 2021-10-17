@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Movie struct {
 	Name    string
@@ -9,6 +11,8 @@ type Movie struct {
 	plays   int
 	viewers int
 }
+
+type CritiqueFn func(m *Movie) (float32, error)
 
 func (m *Movie) Rate(rating float32) error {
 
