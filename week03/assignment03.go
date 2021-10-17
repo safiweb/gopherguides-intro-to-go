@@ -14,6 +14,8 @@ type Movie struct {
 
 type CritiqueFn func(m *Movie) (float32, error)
 
+type Theater struct{}
+
 func (m *Movie) Rate(rating float32) error {
 
 	if m.plays == 0 {
@@ -46,6 +48,33 @@ func (m Movie) Rating() float64 {
 func (m Movie) String() string {
 	s := fmt.Sprintf("%v (%dm) %.1f%%", m.Name, m.Length, m.rating)
 	return s
+}
+
+func (t *Theater) Play(viewers int, m ...*Movie) error {
+
+	if len(m) == 0 {
+		return fmt.Errorf("no movies to play")
+	}
+
+	for _, v := range m {
+		v.Play(viewers)
+	}
+
+	return nil
+}
+
+func (t *Theater) Critique(fn CritiqueFn, m []*Movie) error {
+	for _, v := range m {
+		v.Play(1)
+		if rate, err := fn(v); err != nil {
+			return fmt.Errorf("no rate provided or exist")
+		} else {
+			if err := v.Rate(rate); err != nil {
+				return fmt.Errorf("oh no, something went wrong! %v", err)
+			}
+		}
+	}
+	return nil
 }
 
 func main() {
