@@ -78,5 +78,17 @@ func (t *Theater) Critique(fn CritiqueFn, m []*Movie) error {
 }
 
 func main() {
+	testCases := []Movie{
+		{Name: "Gladiator", Length: 155, plays: 4},
+		{Name: "Léon: The Professional", Length: 110},
+	}
 
+	for _, v := range testCases {
+		got := v.Rate(10.2)
+		want := error(nil)
+		fmt.Println(v.plays)
+		if got != want {
+			fmt.Printf("no movies to play,play:%s", got)
+		}
+	}
 }
