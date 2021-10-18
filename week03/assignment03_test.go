@@ -62,8 +62,8 @@ func TestViewers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			got := tt.a.Viewers()
-			if reflect.TypeOf(got) != reflect.TypeOf(0) && got > 0 {
-				t.Errorf("the %s movie viewers %v, is not a number.", tt.a.Name, got)
+			if reflect.TypeOf(got) != reflect.TypeOf(0) || got < 0 {
+				t.Errorf("the %s movie viewers %v, is not a vieweble number.", tt.a.Name, got)
 			}
 		})
 
@@ -81,8 +81,8 @@ func TestPlays(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			got := tt.a.Plays()
-			if reflect.TypeOf(got) != reflect.TypeOf(0) && got > 0 {
-				t.Errorf("the %s movie plays %v, is not a number.", tt.a.Name, got)
+			if reflect.TypeOf(got) != reflect.TypeOf(0) || got < 0 {
+				t.Errorf("the %s movie plays %v, is not a playable number.", tt.a.Name, got)
 			}
 		})
 
@@ -100,8 +100,8 @@ func TestRating(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			got := tt.a.Rating()
-			if got > 0 {
-				t.Errorf("the %s movie rating %.1f should be greater than 0, is not a number.", tt.a.Name, got)
+			if got <= 0 {
+				t.Errorf("the %s movie rating %.1f should be greater than 0, %v is not a rating number.", tt.a.Name, got, got)
 			}
 		})
 
@@ -135,7 +135,7 @@ func TestPlayTheater(t *testing.T) {
 		want error
 	}{
 		{Theater{}, Movie{Name: "Gladiator", Length: 155}, nil},
-		{Theater{}, Movie{Name: "Léon: The Professional", Length: 110}, fmt.Errorf("no movies to play")},
+		{Theater{}, Movie{}, fmt.Errorf("no movies to play")},
 	}
 
 	for _, tt := range tests {
@@ -144,38 +144,49 @@ func TestPlayTheater(t *testing.T) {
 				t.Errorf("no movies to play")
 			}
 		})
-
 	}
 }
 
 func TestCritique(t *testing.T) {
 
-	moviesInTheater := []*Movie{
-		{Name: "Gladiator", Length: 155},
-		{Name: "Léon: The Professional", Length: 110},
-		{Name: "Léon: The Professional", Length: 110},
+	var tests = []struct {
+		a    Theater
+		b    []*Movie
+		want error
+	}{
+		{Theater{}, []*Movie{{Name: "Gladiator", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, nil},
+		{Theater{}, []*Movie{{Name: "Gladiator 2", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, nil},
+		{Theater{}, []*Movie{}, fmt.Errorf("no movies to play")},
 	}
 
-	movieOne := Movie{Name: "The Shawshank Redemption", Length: 142}
-
-	theaterOne := Theater{}
-	if err := theaterOne.Play(15, &movieOne); err != nil {
-		t.Errorf("no movies to play")
-	}
+	var critiqueRating float32
 
 	fn := func(a *Movie) (float32, error) {
 
-		if a == nil {
+		if a.Name == "" && a.Length == 0 {
 			return 0, fmt.Errorf("the movie is nil/empty")
 		}
-
-		critiqueRating := 80
 
 		return float32(critiqueRating), nil
 	}
 
-	if b := theaterOne.Critique(fn, moviesInTheater); b != nil {
-		t.Errorf("unexpected error %v", b)
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+
+			for _, v := range tt.b {
+				v.Play(1)
+				//fn(v)
+				critiqueRating -= 2
+				if rate, err := fn(v); err != nil || rate <= 0 {
+					t.Errorf("no rate provided or exist")
+				} else {
+					if err := v.Rate(rate); err != nil {
+						t.Errorf("oh no, something went wrong! %v", err)
+					}
+				}
+
+			}
+		})
 	}
 
 }

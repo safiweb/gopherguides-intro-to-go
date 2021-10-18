@@ -52,11 +52,10 @@ func (m Movie) String() string {
 
 func (t *Theater) Play(viewers int, m ...*Movie) error {
 
-	if len(m) == 0 {
-		return fmt.Errorf("no movies to play")
-	}
-
 	for _, v := range m {
+		if v.Name == "" && v.Length == 0 {
+			return fmt.Errorf("no movies to play")
+		}
 		v.Play(viewers)
 	}
 
@@ -77,18 +76,4 @@ func (t *Theater) Critique(fn CritiqueFn, m []*Movie) error {
 	return nil
 }
 
-func main() {
-	testCases := []Movie{
-		{Name: "Gladiator", Length: 155, plays: 4},
-		{Name: "Léon: The Professional", Length: 110},
-	}
-
-	for _, v := range testCases {
-		got := v.Rate(10.2)
-		want := error(nil)
-		fmt.Println(v.plays)
-		if got != want {
-			fmt.Printf("no movies to play,play:%s", got)
-		}
-	}
-}
+func main() {}
