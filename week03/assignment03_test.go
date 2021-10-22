@@ -2,22 +2,22 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
 func TestRate(t *testing.T) {
 
 	var tests = []struct {
+		name string
 		a    Movie
 		want error
 	}{
-		{Movie{Name: "Gladiator", Length: 155, plays: 4}, nil},
-		{Movie{Name: "Léon: The Professional", Length: 110}, fmt.Errorf("can't review a movie without watching it first")},
+		{"success", Movie{Name: "Gladiator", Length: 155, plays: 4}, nil},
+		{"failure", Movie{Name: "Léon: The Professional", Length: 110}, fmt.Errorf("can't review a movie without watching it first")},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := tt.a.Rate(50.2)
 			if got != tt.want {
 				t.Errorf("no movies to play: %s", got)
@@ -29,22 +29,24 @@ func TestRate(t *testing.T) {
 
 func TestPlay(t *testing.T) {
 	var tests = []struct {
-		a    Movie
-		b    int
-		want int
+		name      string
+		a         Movie
+		b         int
+		want_view int
+		want_play int
 	}{
-		{Movie{Name: "Gladiator", Length: 155}, 5, 5},
-		{Movie{Name: "Léon: The Professional", Length: 110}, 5, 0},
+		{"success", Movie{Name: "Gladiator", Length: 155}, 5, 5, 1},
+		{"failure", Movie{Name: "Léon: The Professional", Length: 110}, 5, 0, 0},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			tt.a.Play(tt.b)
-			if tt.a.viewers != tt.want {
-				t.Errorf("the %s movie views %d, expected: %d.", tt.a.Name, tt.a.viewers, tt.want)
+			if tt.a.viewers != tt.want_view {
+				t.Errorf("the %s movie views %d, expected: %d.", tt.a.Name, tt.a.viewers, tt.want_view)
 			}
-			if tt.a.plays != tt.want {
-				t.Errorf("the %s movie plays %d, expected: %d.", tt.a.Name, tt.a.plays, tt.want)
+			if tt.a.plays != tt.want_play {
+				t.Errorf("the %s movie plays %d, expected: %d.", tt.a.Name, tt.a.plays, tt.want_play)
 			}
 		})
 
@@ -53,16 +55,17 @@ func TestPlay(t *testing.T) {
 
 func TestViewers(t *testing.T) {
 	var tests = []struct {
-		a Movie
+		name string
+		a    Movie
 	}{
-		{Movie{Name: "Gladiator", Length: 155, viewers: -1}},
-		{Movie{Name: "Léon: The Professional", Length: 110, viewers: 4}},
+		{"failure", Movie{Name: "Gladiator", Length: 155, viewers: -1}},
+		{"success", Movie{Name: "Léon: The Professional", Length: 110, viewers: 4}},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := tt.a.Viewers()
-			if reflect.TypeOf(got) != reflect.TypeOf(0) || got < 0 {
+			if got < 0 {
 				t.Errorf("the %s movie viewers %v, is not a vieweble number.", tt.a.Name, got)
 			}
 		})
@@ -72,16 +75,17 @@ func TestViewers(t *testing.T) {
 
 func TestPlays(t *testing.T) {
 	var tests = []struct {
-		a Movie
+		name string
+		a    Movie
 	}{
-		{Movie{Name: "Gladiator", Length: 155, plays: -1}},
-		{Movie{Name: "Léon: The Professional", Length: 110, plays: 4}},
+		{"failure", Movie{Name: "Gladiator", Length: 155, plays: -1}},
+		{"success", Movie{Name: "Léon: The Professional", Length: 110, plays: 4}},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := tt.a.Plays()
-			if reflect.TypeOf(got) != reflect.TypeOf(0) || got < 0 {
+			if got < 0 {
 				t.Errorf("the %s movie plays %v, is not a playable number.", tt.a.Name, got)
 			}
 		})
@@ -91,14 +95,15 @@ func TestPlays(t *testing.T) {
 
 func TestRating(t *testing.T) {
 	var tests = []struct {
-		a Movie
+		name string
+		a    Movie
 	}{
-		{Movie{Name: "Gladiator", Length: 155, rating: 90.5, plays: 2}},
-		{Movie{Name: "Léon: The Professional", Length: 110, rating: 0.0, plays: 5}},
+		{"success", Movie{Name: "Gladiator", Length: 155, rating: 90.5, plays: 2}},
+		{"failure", Movie{Name: "Léon: The Professional", Length: 110, rating: 0.0, plays: 5}},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := tt.a.Rating()
 			if got <= 0 {
 				t.Errorf("the %s movie rating %.1f should be greater than 0, %v is not a rating number.", tt.a.Name, got, got)
@@ -110,15 +115,16 @@ func TestRating(t *testing.T) {
 
 func TestString(t *testing.T) {
 	var tests = []struct {
+		name string
 		a    Movie
 		want string
 	}{
-		{Movie{Name: "Gladiator", Length: 155, rating: 90.5}, "Gladiator (155m) 90.5%"},
-		{Movie{Name: "Léon: The Professional", Length: 110, rating: 4.5}, "Léon: The Professional (110m) 68.9%"},
+		{"success", Movie{Name: "Gladiator", Length: 155, rating: 90.5}, "Gladiator (155m) 90.5%"},
+		{"failure", Movie{Name: "Léon: The Professional", Length: 110, rating: 4.5}, "Léon: The Professional (110m) 68.9%"},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := tt.a.String()
 			if got != tt.want {
 				t.Errorf("error outputing movie detail,got: %s, expected:%s ", got, tt.want)
@@ -130,18 +136,22 @@ func TestString(t *testing.T) {
 
 func TestPlayTheater(t *testing.T) {
 	var tests = []struct {
+		name string
 		a    Theater
 		b    Movie
-		want error
+		c    int
+		want int
 	}{
-		{Theater{}, Movie{Name: "Gladiator", Length: 155}, nil},
-		{Theater{}, Movie{}, fmt.Errorf("no movies to play")},
+		{"failure", Theater{}, Movie{Name: "Gladiator", Length: 155}, -2, 0},
+		{"success", Theater{}, Movie{Name: "Batman", Length: 155}, 5, 5},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			if err := tt.a.Play(15, &tt.b); err != nil {
-				t.Errorf("no movies to play")
+		t.Run(tt.name, func(t *testing.T) {
+			tt.a.Play(tt.c, &tt.b)
+			got := tt.b.viewers
+			if got != tt.want {
+				t.Errorf("error playing movie detail,got: %v, expected:%v ", got, tt.want)
 			}
 		})
 	}
@@ -150,13 +160,15 @@ func TestPlayTheater(t *testing.T) {
 func TestCritique(t *testing.T) {
 
 	var tests = []struct {
-		a    Theater
-		b    []*Movie
-		want error
+		name    string
+		a       Theater
+		b       []*Movie
+		cRating float32
+		want    error
 	}{
-		{Theater{}, []*Movie{{Name: "Gladiator", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, nil},
-		{Theater{}, []*Movie{{Name: "Gladiator 2", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, nil},
-		{Theater{}, []*Movie{}, fmt.Errorf("no movies to play")},
+		{"success", Theater{}, []*Movie{{Name: "Gladiator", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, 80.0, nil},
+		{"failure", Theater{}, []*Movie{{Name: "Gladiator 2", Length: 155}, {Name: "Léon: The Professional", Length: 110}}, -1, nil},
+		{"failure 2", Theater{}, []*Movie{}, 80, fmt.Errorf("no movies to play")},
 	}
 
 	var critiqueRating float32
@@ -171,18 +183,25 @@ func TestCritique(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if len(tt.b) == 0 {
+				t.Errorf("No movies in theater")
+			}
 
 			for _, v := range tt.b {
 				v.Play(1)
 				//fn(v)
-				critiqueRating -= 2
-				if rate, err := fn(v); err != nil || rate <= 0 {
-					t.Errorf("no rate provided or exist")
-				} else {
-					if err := v.Rate(rate); err != nil {
-						t.Errorf("oh no, something went wrong! %v", err)
-					}
+				critiqueRating = tt.cRating
+
+				rate, _ := fn(v)
+
+				if rate <= 0 {
+					t.Errorf("Critique rating not eligible,got: %v, expected:>0", rate)
+				}
+
+				if err := v.Rate(rate); err != nil {
+					t.Errorf("oh no, something went wrong! %v", err)
 				}
 
 			}

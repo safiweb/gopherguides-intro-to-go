@@ -22,14 +22,14 @@ func (m *Movie) Rate(rating float32) error {
 		return fmt.Errorf("can't review a movie without watching it first")
 	}
 
-	m.rating = m.rating + rating
+	m.rating += rating
 	return nil
 
 }
 
 func (m *Movie) Play(viewers int) {
-	m.viewers = m.viewers + viewers
-	m.plays = m.plays + viewers
+	m.viewers += viewers
+	m.plays++
 }
 
 func (m Movie) Viewers() int {
@@ -50,12 +50,13 @@ func (m Movie) String() string {
 	return s
 }
 
-func (t *Theater) Play(viewers int, m ...*Movie) error {
+func (t *Theater) Play(viewers int, movies ...*Movie) error {
 
-	for _, v := range m {
-		if v.Name == "" && v.Length == 0 {
-			return fmt.Errorf("no movies to play")
-		}
+	if len(movies) == 0 {
+		return fmt.Errorf("no movies to play")
+	}
+
+	for _, v := range movies {
 		v.Play(viewers)
 	}
 
@@ -65,14 +66,17 @@ func (t *Theater) Play(viewers int, m ...*Movie) error {
 func (t *Theater) Critique(fn CritiqueFn, m []*Movie) error {
 	for _, v := range m {
 		v.Play(1)
-		if rate, err := fn(v); err != nil {
+
+		rate, _ := fn(v)
+		if rate <= 0 {
 			return fmt.Errorf("no rate provided or exist")
-		} else {
-			if err := v.Rate(rate); err != nil {
-				return fmt.Errorf("oh no, something went wrong! %v", err)
-			}
+		}
+
+		if err := v.Rate(rate); err != nil {
+			return fmt.Errorf("oh no, something went wrong! %w", err)
 		}
 	}
+
 	return nil
 }
 
