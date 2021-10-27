@@ -5,42 +5,13 @@ import (
 	"io"
 )
 
-type Entertainer interface {
-	Name() string
-	Perform(v Venue) error
-}
-
-type Setuper interface {
-	Setup(v Venue) error
-}
-
-type Teardowner interface {
-	Teardown(v Venue) error
-}
-
+// snippet: venue
 type Venue struct {
 	Audience int
 	Log      io.Writer
 }
 
-func (v Venue) Name() string {
-	return "Drake"
-}
-
-func (v Venue) Perform(p Venue) error {
-	if p.Audience <= 0 {
-		return fmt.Errorf("%v cannot perform for 0 audience", p.Name())
-	}
-	return nil
-}
-
-func (v Venue) Setup(p Venue) error {
-	if p.Audience <= 0 {
-		return fmt.Errorf("%v has no audience to complete setup", p.Name())
-	}
-
-	return nil
-}
+// snippet: venue
 
 func (v *Venue) Entertain(audience int, acts ...Entertainer) error {
 	if len(acts) == 0 {
