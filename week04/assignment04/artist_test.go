@@ -12,13 +12,13 @@ func TestArtistName(t *testing.T) {
 		a    Artist
 		exp  string
 	}{
-		{"failure", Artist{Artistname: "Rihanna"}, "Beyonce"},
-		{"success", Artist{Artistname: "Rihanna"}, "Rihanna"},
+		{"failure", Artist{StageName: "Rihanna"}, "Beyonce"},
+		{"success", Artist{StageName: "Rihanna"}, "Rihanna"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.a.Artistname
+			got := tt.a.StageName
 			exp := tt.exp
 			if got != exp {
 				t.Fatalf("expected %s, got %s", exp, got)
@@ -35,8 +35,8 @@ func TestArtistPerform(t *testing.T) {
 		a    Artist
 		v    Venue
 	}{
-		{"failure", Artist{Artistname: "Rihanna"}, Venue{}},
-		{"success", Artist{Artistname: "Rihanna"}, Venue{Audience: 20}},
+		{"failure", Artist{StageName: "Rihanna"}, Venue{}},
+		{"success", Artist{StageName: "Rihanna"}, Venue{Audience: 20}},
 	}
 
 	for _, tt := range tests {
@@ -50,7 +50,7 @@ func TestArtistPerform(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			exp := tt.a.Artistname + " has completed performing.\n"
+			exp := tt.a.StageName + " has completed performing.\n"
 			got := buff.String()
 
 			if exp != got {
@@ -67,8 +67,8 @@ func TestArtistSetup(t *testing.T) {
 		a    Artist
 		v    Venue
 	}{
-		{"failure", Artist{Artistname: "Rihanna"}, Venue{}},
-		{"success", Artist{Artistname: "Rihanna"}, Venue{Audience: 20}},
+		{"failure", Artist{StageName: "Rihanna"}, Venue{}},
+		{"success", Artist{StageName: "Rihanna"}, Venue{Audience: 20}},
 	}
 
 	for _, tt := range tests {
@@ -82,7 +82,7 @@ func TestArtistSetup(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			exp := tt.a.Artistname + " has completed setup.\n"
+			exp := tt.a.StageName + " has completed setup.\n"
 			got := buff.String()
 
 			if exp != got {

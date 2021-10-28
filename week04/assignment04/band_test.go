@@ -12,13 +12,13 @@ func TestBandName(t *testing.T) {
 		b    Band
 		exp  string
 	}{
-		{"failure", Band{Bandname: "Maroon 5"}, "Boyz 2 Men"},
-		{"success", Band{Bandname: "Boyz 2 Men"}, "Boyz 2 Men"},
+		{"failure", Band{StageName: "Maroon 5"}, "Boyz 2 Men"},
+		{"success", Band{StageName: "Boyz 2 Men"}, "Boyz 2 Men"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.b.Bandname
+			got := tt.b.StageName
 			exp := tt.exp
 			if got != exp {
 				t.Fatalf("expected %s, got %s", exp, got)
@@ -35,8 +35,8 @@ func TestBandPerform(t *testing.T) {
 		b    Band
 		v    Venue
 	}{
-		{"failure", Band{Bandname: "Boyz 2 Men"}, Venue{}},
-		{"success", Band{Bandname: "Maroon 5"}, Venue{Audience: 20}},
+		{"failure", Band{StageName: "Boyz 2 Men"}, Venue{}},
+		{"success", Band{StageName: "Maroon 5"}, Venue{Audience: 20}},
 	}
 
 	for _, tt := range tests {
@@ -50,7 +50,7 @@ func TestBandPerform(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			exp := tt.b.Bandname + " has completed performing.\n"
+			exp := tt.b.StageName + " has completed performing.\n"
 			got := buff.String()
 
 			if exp != got {
@@ -66,8 +66,8 @@ func TestBandTeardown(t *testing.T) {
 		b    Band
 		v    Venue
 	}{
-		{"failure", Band{Bandname: "Boyz 2 Men"}, Venue{}},
-		{"success", Band{Bandname: "Maroon 5"}, Venue{Audience: 20}},
+		{"failure", Band{StageName: "Boyz 2 Men"}, Venue{}},
+		{"success", Band{StageName: "Maroon 5"}, Venue{Audience: 20}},
 	}
 
 	for _, tt := range tests {
@@ -81,7 +81,7 @@ func TestBandTeardown(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			exp := tt.b.Bandname + " has completed teardown.\n"
+			exp := tt.b.StageName + " has completed teardown.\n"
 			got := buff.String()
 
 			if exp != got {

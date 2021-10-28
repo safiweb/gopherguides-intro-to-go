@@ -15,12 +15,12 @@ func TestEntertain(t *testing.T) {
 		acts     []Entertainer
 	}{
 		{"failure", 0, []Entertainer{
-			Artist{Artistname: "Burna Boy"},
-			Band{Bandname: "Sauti Soul"},
+			Artist{StageName: "Burna Boy"},
+			Band{StageName: "Sauti Soul"},
 		}},
 		{"success", 20, []Entertainer{
-			Artist{Artistname: "Wizkid"},
-			Band{Bandname: "Destruction Boyz"},
+			Artist{StageName: "Wizkid"},
+			Band{StageName: "Destruction Boyz"},
 		}},
 	}
 
@@ -44,12 +44,12 @@ func TestPlay(t *testing.T) {
 		acts []Entertainer
 	}{
 		{"failure", Venue{Audience: 0}, []Entertainer{
-			Artist{Artistname: "Burna Boy"},
-			Band{Bandname: "Sauti Soul"},
+			Artist{StageName: "Burna Boy"},
+			Band{StageName: "Sauti Soul"},
 		}},
 		{"success", Venue{Audience: 12}, []Entertainer{
-			Artist{Artistname: "Wizkid"},
-			Band{Bandname: "Destruction Boyz"},
+			Artist{StageName: "Wizkid"},
+			Band{StageName: "Destruction Boyz"},
 		}},
 	}
 
