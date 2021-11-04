@@ -2,18 +2,19 @@ package assignment04
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
-func TestArtistName(t *testing.T) {
+func TestArtist_Name(t *testing.T) {
 
 	var tests = []struct {
 		name string
 		a    Artist
 		exp  string
 	}{
-		{"failure", Artist{StageName: "Rihanna"}, "Beyonce"},
-		{"success", Artist{StageName: "Rihanna"}, "Rihanna"},
+		{"non existing artist", Artist{}, ""},
+		{"existing artist", Artist{StageName: "Rihanna"}, "Rihanna"},
 	}
 
 	for _, tt := range tests {
@@ -28,15 +29,16 @@ func TestArtistName(t *testing.T) {
 
 }
 
-func TestArtistPerform(t *testing.T) {
+func TestArtist_Perform(t *testing.T) {
 
 	var tests = []struct {
 		name string
 		a    Artist
 		v    Venue
+		exp  error
 	}{
-		{"failure", Artist{StageName: "Rihanna"}, Venue{}},
-		{"success", Artist{StageName: "Rihanna"}, Venue{Audience: 20}},
+		{"no venue to perform", Artist{StageName: "Rihanna"}, Venue{}, fmt.Errorf("Rihanna cannot perform for 0 audience")},
+		{"venue to perform", Artist{StageName: "Beyonce"}, Venue{Audience: 20}, nil},
 	}
 
 	for _, tt := range tests {
@@ -46,8 +48,12 @@ func TestArtistPerform(t *testing.T) {
 			tt.v.Log = &buff
 
 			err := tt.a.Perform(tt.v)
+
 			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				if err.Error() != tt.exp.Error() {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
 			}
 
 			exp := tt.a.StageName + " has completed performing.\n"
@@ -60,15 +66,16 @@ func TestArtistPerform(t *testing.T) {
 	}
 }
 
-func TestArtistSetup(t *testing.T) {
+func TestArtist_Setup(t *testing.T) {
 
 	var tests = []struct {
 		name string
 		a    Artist
 		v    Venue
+		exp  error
 	}{
-		{"failure", Artist{StageName: "Rihanna"}, Venue{}},
-		{"success", Artist{StageName: "Rihanna"}, Venue{Audience: 20}},
+		{"no venue to set up", Artist{StageName: "Rihanna"}, Venue{}, fmt.Errorf("Rihanna has 0 audience to complete setup")},
+		{"artist has venue to set up", Artist{StageName: "Rihanna"}, Venue{Audience: 20}, nil},
 	}
 
 	for _, tt := range tests {
@@ -79,7 +86,10 @@ func TestArtistSetup(t *testing.T) {
 
 			err := tt.a.Setup(tt.v)
 			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				if err.Error() != tt.exp.Error() {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
 			}
 
 			exp := tt.a.StageName + " has completed setup.\n"
