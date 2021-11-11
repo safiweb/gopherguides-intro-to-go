@@ -101,6 +101,7 @@ func TestManager_Assign(t *testing.T) {
 					t.Fatalf("expected %v, got %v", tt.err, err)
 				}
 			case <-manager.Jobs():
+				manager.Stop()
 				return
 			}
 		})
