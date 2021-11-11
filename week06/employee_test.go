@@ -37,29 +37,6 @@ func TestEmployee_IsValid(t *testing.T) {
 func TestEmployee_work(t *testing.T) {
 	t.Parallel()
 
-	/*manager := NewManager()
-	defer manager.Stop()
-
-	e := Employee(1)
-	p := Product{Quantity: 1}
-
-	go e.work(manager)
-
-	err := manager.Assign(&p)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	select {
-	case err := <-manager.Errors():
-		t.Fatal(err)
-		return
-	case cp := <-manager.Completed():
-		if check := cp.IsValid(); check != nil {
-			t.Fatal(cp)
-		}
-	}*/
-
 	testcases := []struct {
 		name     string
 		employee Employee
