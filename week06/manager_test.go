@@ -8,12 +8,8 @@ import (
 func TestManager_Start(t *testing.T) {
 	t.Parallel()
 
-	//create new manager
-	manager := NewManager()
-
 	testcases := []struct {
-		name string
-		//m     *Manager
+		name  string
 		count int
 		err   error
 	}{
@@ -32,24 +28,14 @@ func TestManager_Start(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 
-			go func() {
-				got := manager.Start(tt.count)
-				if got != nil {
-					manager.Errors() <- got
-					manager.Stop()
-				}
-			}()
+			//create new manager
+			manager := NewManager()
+			defer manager.Stop()
 
-			for {
-				select {
-				case err := <-manager.Errors():
-					if err != nil {
-						if err.Error() != tt.err.Error() {
-							t.Fatalf("expected %v, got %v", tt.err, err)
-						}
-					}
-				case <-manager.Done():
-					return
+			err := manager.Start(tt.count)
+			if err != nil {
+				if err.Error() != tt.err.Error() {
+					t.Fatalf("expected %v, got %v", tt.err, err)
 				}
 			}
 
@@ -60,17 +46,13 @@ func TestManager_Start(t *testing.T) {
 func TestManager_Assign(t *testing.T) {
 	t.Parallel()
 
-	//Create new manager & stop the manager from further work
-	m := NewManager()
-	m.Stop()
+	fake := Product{}
 
-	fakeProduct := Product{}
+	ready := Product{Quantity: 1}
+	ready.Build(0)
 
-	readyProduct := Product{Quantity: 1}
-	readyProduct.Build(0)
-
-	fullProduct := Product{Quantity: 1}
-	fullProduct.Build(1)
+	full := Product{Quantity: 1}
+	full.Build(1)
 
 	testcases := []struct {
 		name     string
@@ -79,27 +61,18 @@ func TestManager_Assign(t *testing.T) {
 		err      error
 	}{
 		{
-			name:     "manager stopped",
-			manager:  m,
-			products: &fakeProduct,
-			err:      ErrManagerStopped{},
-		},
-		{
 			name:     "manager working, invalid products quantity",
-			manager:  NewManager(),
-			products: &fakeProduct,
+			products: &fake,
 			err:      ErrInvalidQuantity(0),
 		},
 		{
 			name:     "manager working, invalid employee",
-			manager:  NewManager(),
-			products: &readyProduct,
+			products: &ready,
 			err:      ErrInvalidEmployee(Employee(0)),
 		},
 		{
 			name:     "manager working, valid products",
-			manager:  NewManager(),
-			products: &fullProduct,
+			products: &full,
 			err:      nil,
 		},
 	}
@@ -107,34 +80,62 @@ func TestManager_Assign(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 
-			err := tt.manager.Start(1)
+			manager := NewManager()
+			defer manager.Stop()
+
+			err := manager.Start(1)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			got := tt.manager.Assign(tt.products)
-			if got != nil {
-				if got.Error() != tt.err.Error() {
-					t.Fatalf("expected %v, got %v", tt.err, got)
+			go func() {
+				got := manager.Assign(tt.products)
+				if got != nil {
+					manager.Errors() <- got
 				}
-				tt.manager.Stop()
+			}()
+
+			select {
+			case err := <-manager.Errors():
+				if err.Error() != tt.err.Error() {
+					t.Fatalf("expected %v, got %v", tt.err, err)
+				}
+			case <-manager.Jobs():
+				return
 			}
-			tt.manager.Stop()
 		})
 	}
+}
+
+func TestManager_Assign_ManagerStop(t *testing.T) {
+	t.Parallel()
+
+	//Create new manager & stop the manager from further work
+	manager := NewManager()
+	manager.Stop()
+
+	fake := Product{}
+	exp := ErrManagerStopped{}
+
+	got := manager.Assign(&fake)
+	if got != nil {
+		if got.Error() != exp.Error() {
+			t.Fatalf("expected %v, got %v", exp, got)
+			return
+		}
+	}
+
 }
 
 func TestManager_Complete(t *testing.T) {
 	t.Parallel()
 
-	manager := NewManager()
+	fake := Product{}
 
-	fakeProduct := Product{}
+	ready := Product{Quantity: 1}
+	ready.Build(0)
 
-	readyProduct := Product{Quantity: 1}
-	readyProduct.Build(0)
-
-	completeProduct := readyProduct
+	completeProduct := ready
 	completeProduct.Build(1)
 
 	testcases := []struct {
@@ -146,20 +147,20 @@ func TestManager_Complete(t *testing.T) {
 		{
 			name:     "invalid employee",
 			employee: -1,
-			product:  &fakeProduct,
+			product:  &fake,
 			err:      ErrInvalidEmployee(-1),
 		},
 		{
 			name:     "invalid product, zero quantity",
 			employee: 1,
-			product:  &fakeProduct,
+			product:  &fake,
 			err:      ErrInvalidQuantity(0),
 		},
 		{
 			name:     "invalid product, not build",
 			employee: 1,
-			product:  &readyProduct,
-			err:      ErrProductNotBuilt(fmt.Sprintf("product is not built: %v", readyProduct)),
+			product:  &ready,
+			err:      ErrProductNotBuilt(fmt.Sprintf("product is not built: %v", ready)),
 		},
 		{
 			name:     "complete product ready for dispatch",
@@ -172,6 +173,9 @@ func TestManager_Complete(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 
+			manager := NewManager()
+			defer manager.Stop()
+
 			err := manager.Start(1)
 			if err != nil {
 				t.Fatal(err)
@@ -182,7 +186,6 @@ func TestManager_Complete(t *testing.T) {
 				got := manager.Complete(Employee(tt.employee), tt.product)
 				if got != nil {
 					manager.Errors() <- got
-					return
 				}
 
 			}()

@@ -139,6 +139,7 @@ func (m *Manager) Stop() {
 	m.stopped = true
 
 	// close all channels
+	close(m.completed)
 	close(m.quit)
 	close(m.jobs)
 	close(m.errs)

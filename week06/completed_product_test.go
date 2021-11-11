@@ -10,19 +10,17 @@ func TestCompletedProduct_IsValid(t *testing.T) {
 	t.Parallel()
 
 	//Build a product of 1 Quantity for 1 Employee
-	myProduct := Product{Quantity: 1}
-	myProduct.Build(1)
+	prod := Product{Quantity: 1}
+	prod.Build(1)
 
-	//Build a product of 0 Quantity for 1 Employee
-	myProductNoQuantity := Product{}
-	myProductNoQuantity.Build(1)
+	//Employee
+	e := Employee(1)
 
 	//Different Complete Products for different scenarios
-	emptyCompleteProduct := CompletedProduct{}
-	completeProductNoEmployee := CompletedProduct{Product: myProduct, Employee: Employee(0)}
-	completeProductNotBuild := CompletedProduct{Product: Product{Quantity: 1}, Employee: Employee(1)}
-	completeProductNoQuantity := CompletedProduct{Product: myProductNoQuantity, Employee: Employee(1)}
-	completeProductFull := CompletedProduct{Product: myProduct, Employee: Employee(1)}
+	empty := CompletedProduct{}
+	noEmployee := CompletedProduct{Product: prod, Employee: Employee(0)}
+	notBuild := CompletedProduct{Product: Product{Quantity: 1}, Employee: e}
+	good := CompletedProduct{Product: prod, Employee: e}
 
 	testcases := []struct {
 		name string
@@ -31,27 +29,22 @@ func TestCompletedProduct_IsValid(t *testing.T) {
 	}{
 		{
 			name: "empty complete product",
-			cp:   emptyCompleteProduct,
+			cp:   empty,
 			err:  fmt.Errorf("invalid employee number: 0"),
 		},
 		{
 			name: "complete product no employee",
-			cp:   completeProductNoEmployee,
+			cp:   noEmployee,
 			err:  fmt.Errorf("invalid employee number: 0"),
 		},
 		{
 			name: "complete product no buildby",
-			cp:   completeProductNotBuild,
+			cp:   notBuild,
 			err:  fmt.Errorf("product is not built: {1 0}"),
 		},
 		{
-			name: "complete product no quantity",
-			cp:   completeProductNoQuantity,
-			err:  fmt.Errorf("quantity must be greater than 0, got 0"),
-		},
-		{
 			name: "full complete product",
-			cp:   completeProductFull,
+			cp:   good,
 			err:  nil,
 		},
 	}

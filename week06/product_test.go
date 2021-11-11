@@ -8,19 +8,19 @@ import (
 func TestProduct_BuiltBy(t *testing.T) {
 	t.Parallel()
 
-	fakeProduct := Product{}
+	fake := Product{}
 
-	myProduct := Product{Quantity: 1}
-	myProduct.Build(1)
+	prod := Product{Quantity: 1}
+	prod.Build(1)
 
-	got := myProduct.BuiltBy()
+	got := prod.BuiltBy()
 	exp := Employee(1)
 
 	if got != exp {
 		t.Fatalf("expected %d, got %d", exp, got)
 	}
 
-	got = fakeProduct.BuiltBy()
+	got = fake.BuiltBy()
 	exp = Employee(0)
 
 	if got != exp {
@@ -33,7 +33,7 @@ func TestProduct_Build(t *testing.T) {
 	t.Parallel()
 
 	emptyProduct := Product{}
-	readyProduct := Product{Quantity: 1}
+	ready := Product{Quantity: 1}
 
 	testcases := []struct {
 		name    string
@@ -49,13 +49,13 @@ func TestProduct_Build(t *testing.T) {
 		},
 		{
 			name:    "valid product, bad employee",
-			product: &readyProduct,
+			product: &ready,
 			worker:  Employee(-1),
 			err:     ErrInvalidEmployee(Employee(-1)),
 		},
 		{
 			name:    "valid product, good employee",
-			product: &readyProduct,
+			product: &ready,
 			worker:  Employee(1),
 			err:     nil,
 		},
@@ -77,12 +77,12 @@ func TestProduct_Build(t *testing.T) {
 func TestProduct_IsBuilt(t *testing.T) {
 	t.Parallel()
 
-	fakeProduct := Product{}
+	fake := Product{}
 
-	readyProduct := Product{Quantity: 1}
-	readyProduct.Build(0)
+	ready := Product{Quantity: 1}
+	ready.Build(0)
 
-	completeProduct := readyProduct
+	completeProduct := ready
 	completeProduct.Build(1)
 
 	testcases := []struct {
@@ -92,13 +92,13 @@ func TestProduct_IsBuilt(t *testing.T) {
 	}{
 		{
 			name:    "empty fake product",
-			product: fakeProduct,
-			err:     ErrInvalidQuantity(fakeProduct.Quantity),
+			product: fake,
+			err:     ErrInvalidQuantity(fake.Quantity),
 		},
 		{
 			name:    "ready product no worker",
-			product: readyProduct,
-			err:     ErrProductNotBuilt(fmt.Sprintf("product is not built: %v", readyProduct)),
+			product: ready,
+			err:     ErrProductNotBuilt(fmt.Sprintf("product is not built: %v", ready)),
 		},
 		{
 			name:    "complete product with worker",
