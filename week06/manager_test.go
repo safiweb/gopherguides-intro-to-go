@@ -104,6 +104,8 @@ func TestManager_Assign(t *testing.T) {
 				manager.Stop()
 				return
 			}
+
+			manager.Stop()
 		})
 	}
 }
