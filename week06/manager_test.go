@@ -83,11 +83,6 @@ func TestManager_Assign(t *testing.T) {
 			manager := NewManager()
 			defer manager.Stop()
 
-			err := manager.Start(1)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			go func() {
 				got := manager.Assign(tt.products)
 				if got != nil {
@@ -100,12 +95,14 @@ func TestManager_Assign(t *testing.T) {
 				if err.Error() != tt.err.Error() {
 					t.Fatalf("expected %v, got %v", tt.err, err)
 				}
-			case <-manager.Jobs():
-				manager.Stop()
 				return
+			case p := <-manager.Jobs():
+				if check := p.IsValid(); check != nil {
+					t.Fatalf("expected %v, got %v", tt.err, check)
+				}
 			}
-
 			manager.Stop()
+
 		})
 	}
 }
