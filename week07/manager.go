@@ -1,6 +1,9 @@
 package week07
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Manager is responsible for receiving product orders
 // and assigning them to employees. Manager is also responsible
@@ -13,8 +16,8 @@ type Manager struct {
 	completed chan CompletedProduct
 	errs      chan error
 	jobs      chan *Product
-	quit      chan struct{}
 	stopped   bool
+	cancel    context.CancelFunc
 }
 
 // NewManager will create a new Manager.
@@ -25,7 +28,6 @@ func NewManager() *Manager {
 		completed: make(chan CompletedProduct),
 		errs:      make(chan error),
 		jobs:      make(chan *Product),
-		quit:      make(chan struct{}),
 	}
 }
 
@@ -33,25 +35,28 @@ func NewManager() *Manager {
 // and start listening for jobs and errors.
 // Managers should be stopped using the Stop method
 // when they are no longer needed.
-func (m *Manager) Start(count int) error {
+func (m *Manager) Start(ctx context.Context, count int) (context.Context, error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	m.cancel = cancel
 
 	if count <= 0 {
-		return ErrInvalidEmployeeCount(count)
+		return nil, ErrInvalidEmployeeCount(count)
 	}
 
 	for i := 0; i < count; i++ {
-
 		e := Employee(i + 1)
-		go e.work(m)
+		go e.work(ctx, m)
 	}
 
-	return nil
+	return ctx, nil
 }
 
 // Assign will assign the given products to employees
 // as employeess become available. An invalid product
 // will return an error.
 func (m *Manager) Assign(products ...*Product) error {
+
 	if m.stopped {
 		return ErrManagerStopped{}
 	}
@@ -87,6 +92,11 @@ func (m *Manager) Complete(e Employee, p *Product) error {
 		return err
 	}
 
+	// check if manager is stopped
+	if m.stopped {
+		return ErrManagerStopped{}
+	}
+
 	cp := CompletedProduct{
 		Employee: e,
 		Product:  *p, // deference pointer to value type ype t
@@ -116,9 +126,9 @@ func (m *Manager) Completed() <-chan CompletedProduct {
 // when the manager has stopped.
 // Employees should listen to this channel to know
 // when to stop listening for jobs.
-func (m *Manager) Done() <-chan struct{} {
+/*func (m *Manager) Done() <-chan struct{} {
 	return m.quit
-}
+}*/
 
 // Jobs will return a channel that can be listened to
 // for new products to be built.
@@ -134,29 +144,60 @@ func (m *Manager) Errors() chan error {
 
 // Stop will stop the manager and clean up all resources.
 func (m *Manager) Stop() {
+
 	if m.stopped {
 		return
 	}
 
+	m.cancel()
 	m.stopped = true
 
 	// close all channels
-	close(m.quit)
 	close(m.jobs)
 	close(m.errs)
+	close(m.completed)
 }
 
-// snippet: example
+//Run will return CompletedProducts by running the Manager
+//for provided products and number of employees
 func Run(ctx context.Context, count int, products ...*Product) ([]CompletedProduct, error) {
-	// NOTE: this function should not be the one to create
-	// the necessary contexts, time outs, signals, etc.
-	// The Run method should not care about those concerns,
-	// only its own.
 
-	// TODO: implement this function
-	// This function should run the manager with the given products
-	// and return the results.
-	return nil, nil
+	var prods []CompletedProduct
+
+	//Initilize manager
+	manager := NewManager()
+	//defer manager.Stop()
+
+	ctx, err := manager.Start(ctx, count)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
+	//Assign products to employees
+	go func() {
+		err = manager.Assign(products...)
+		if err != nil {
+			manager.Errors() <- err
+		}
+	}()
+
+	//Get completed products
+	go func() {
+		cp := manager.Completed()
+		for k := range cp {
+			prods = append(prods, k)
+			if len(prods) == count {
+				manager.Stop()
+			}
+		}
+	}()
+
+	select {
+	case err = <-manager.Errors():
+		manager.Stop()
+		return nil, err
+	case <-ctx.Done():
+		return prods, nil
+	}
+	//return prods, nil
 }
-
-// snippet: example
