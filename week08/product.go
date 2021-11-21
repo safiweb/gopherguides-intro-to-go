@@ -4,24 +4,6 @@ import (
 	"fmt"
 )
 
-var (
-	ProductA = &Product{
-		Materials: Materials{
-			Wood: 2,
-			Oil:  3,
-		},
-	}
-
-	ProductB = &Product{
-		Materials: Materials{
-			Metal:   1,
-			Oil:     2,
-			Plastic: 3,
-			Wood:    4,
-		},
-	}
-)
-
 // Product to be built by an employee
 type Product struct {
 	Materials Materials

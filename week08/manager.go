@@ -65,16 +65,14 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 	ctx = m.Warehouse.Start(ctx)
 	m.mu.Unlock()
 
-	m.mu.Lock()
 	for i := 0; i < count; i++ {
-
 		e := Employee(i + 1)
 
 		// start the employee working
 		// with the given context and manager
 		go e.work(ctx, m)
 	}
-	m.mu.Unlock()
+
 	// return the context for clients to listen to
 	// for cancellation.
 	return ctx, nil
