@@ -56,7 +56,10 @@ func (p *Product) Build(e Employee, w *Warehouse) error {
 
 	// retrieve materials from warehouse
 	for k, v := range p.Materials {
-		w.Retrieve(k, v)
+		_, err := w.Retrieve(k, v)
+		if err != nil {
+			return err
+		}
 	}
 
 	// mark the product as built

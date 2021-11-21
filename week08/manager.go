@@ -2,6 +2,7 @@ package week08
 
 import (
 	"context"
+	"sync"
 )
 
 // Manager is responsible for receiving product orders
@@ -16,6 +17,8 @@ type Manager struct {
 	errs      chan error
 	jobs      chan *Product
 	stopped   bool
+	mu        sync.Mutex
+	//wg        sync.WaitGroup
 }
 
 // Start will create new employees for the given count,
@@ -36,7 +39,7 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 	m.cancel = cancel
 
 	// launch a goroutine to listen context cancellation
-	go func() {
+	go func(ctx context.Context) {
 
 		// listen for context cancellation
 		// this could come from the external context
@@ -48,8 +51,10 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 
 		// call Stop()
 		m.Stop()
-	}()
 
+	}(ctx)
+
+	m.mu.Lock()
 	if m.Warehouse == nil {
 		m.Warehouse = &Warehouse{}
 	}
@@ -58,7 +63,9 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 	// this returns a context that can be listened to
 	// for cancellation notification from the warehouse
 	ctx = m.Warehouse.Start(ctx)
+	m.mu.Unlock()
 
+	m.mu.Lock()
 	for i := 0; i < count; i++ {
 
 		e := Employee(i + 1)
@@ -67,7 +74,7 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 		// with the given context and manager
 		go e.work(ctx, m)
 	}
-
+	m.mu.Unlock()
 	// return the context for clients to listen to
 	// for cancellation.
 	return ctx, nil
@@ -128,6 +135,10 @@ func (m *Manager) Complete(e Employee, p *Product) error {
 
 // completedCh returns the channel for CompletedProducts
 func (m *Manager) completedCh() chan CompletedProduct {
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.completed == nil {
 		m.completed = make(chan CompletedProduct)
 	}
@@ -144,6 +155,10 @@ func (m *Manager) Completed() <-chan CompletedProduct {
 // Jobs will return a channel that can be listened to
 // for new products to be built.
 func (m *Manager) Jobs() chan *Product {
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.jobs == nil {
 		m.jobs = make(chan *Product)
 	}
@@ -153,6 +168,10 @@ func (m *Manager) Jobs() chan *Product {
 // Errors will return a channel that can be listened to
 // and can be used to receive errors from employees.
 func (m *Manager) Errors() chan error {
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if m.errs == nil {
 		m.errs = make(chan error)
 	}
@@ -161,6 +180,10 @@ func (m *Manager) Errors() chan error {
 
 // Stop will stop the manager and clean up all resources.
 func (m *Manager) Stop() {
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.cancel()
 	if m.stopped {
 		return

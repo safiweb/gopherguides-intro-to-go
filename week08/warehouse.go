@@ -2,6 +2,7 @@ package week08
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -11,10 +12,13 @@ type Warehouse struct {
 	cancel    context.CancelFunc // cancels the warehouse
 	cap       int                // capacity of the warehouse
 	materials Materials          // materials in the warehouse
+	mu        sync.Mutex
 }
 
 // Start the warehouse
 func (w *Warehouse) Start(ctx context.Context) context.Context {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 	ctx, w.cancel = context.WithCancel(ctx)
 	return ctx
 }
@@ -31,6 +35,9 @@ func (w *Warehouse) Retrieve(m Material, q int) (Material, error) {
 	// wait for the materials to become available
 	<-ctx.Done()
 
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	// remove the materials from the warehouse
 	w.materials[m] -= q
 
@@ -46,6 +53,9 @@ func (w *Warehouse) fill(m Material) context.Context {
 	// context is cancelled when the warehouse is full
 	go func() {
 		defer cancel()
+
+		w.mu.Lock()
+		defer w.mu.Unlock()
 
 		if w.cap <= 0 {
 			w.cap = 10
@@ -66,6 +76,7 @@ func (w *Warehouse) fill(m Material) context.Context {
 			time.Sleep(m.Duration())
 			mats[m]++
 			q = mats[m]
+
 		}
 	}()
 
