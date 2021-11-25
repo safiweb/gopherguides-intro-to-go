@@ -17,8 +17,8 @@ type Manager struct {
 	errs      chan error
 	jobs      chan *Product
 	stopped   bool
-	mu        sync.Mutex
-	//wg        sync.WaitGroup
+	mu        sync.RWMutex
+	once      sync.Once
 }
 
 // Start will create new employees for the given count,
@@ -36,7 +36,9 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 
 	// hold onto the cancel function so it can be called
 	// by m.Stop()
+	m.mu.Lock()
 	m.cancel = cancel
+	m.mu.Unlock()
 
 	// launch a goroutine to listen context cancellation
 	go func(ctx context.Context) {
@@ -54,7 +56,6 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 
 	}(ctx)
 
-	m.mu.Lock()
 	if m.Warehouse == nil {
 		m.Warehouse = &Warehouse{}
 	}
@@ -63,7 +64,6 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 	// this returns a context that can be listened to
 	// for cancellation notification from the warehouse
 	ctx = m.Warehouse.Start(ctx)
-	m.mu.Unlock()
 
 	for i := 0; i < count; i++ {
 		e := Employee(i + 1)
@@ -82,9 +82,12 @@ func (m *Manager) Start(ctx context.Context, count int) (context.Context, error)
 // as employeess become available. An invalid product
 // will return an error.
 func (m *Manager) Assign(products ...*Product) error {
+	m.mu.RLock()
 	if m.stopped {
+		m.mu.RUnlock()
 		return ErrManagerStopped{}
 	}
+	m.mu.RUnlock()
 
 	// loop through each product and assign it to an employee
 	for _, p := range products {
@@ -117,10 +120,12 @@ func (m *Manager) Complete(e Employee, p *Product) error {
 		return err
 	}
 
+	m.mu.RLock()
 	cp := CompletedProduct{
 		Employee: e,
 		Product:  *p, // deference pointer to value type ype t
 	}
+	m.mu.RUnlock()
 
 	// fmt.Printf("TODO >> manager.go:102 cp %[1]T %[1]v\n", cp)
 	// Send completed product to Completed() channel
@@ -180,25 +185,33 @@ func (m *Manager) Errors() chan error {
 func (m *Manager) Stop() {
 
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
-	m.cancel()
 	if m.stopped {
+		m.mu.Unlock()
 		return
 	}
+	m.mu.Unlock()
 
-	m.stopped = true
+	m.once.Do(func() {
 
-	// close all channels
-	if m.jobs != nil {
-		close(m.jobs)
-	}
+		m.mu.Lock()
+		defer m.mu.Unlock()
 
-	if m.errs != nil {
-		close(m.errs)
-	}
+		m.cancel()
 
-	if m.completed != nil {
-		close(m.completed)
-	}
+		m.stopped = true
+
+		// close all channels
+		if m.jobs != nil {
+			close(m.jobs)
+		}
+
+		if m.errs != nil {
+			close(m.errs)
+		}
+
+		if m.completed != nil {
+			close(m.completed)
+		}
+	})
 }
