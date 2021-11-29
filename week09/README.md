@@ -1,23 +1,7 @@
 # Newsmill
-
-A Go app implementing a topic-based publish-subscribe system using channels. 
-
-The Newsmill app have many sources for news content, and subscribers listening/reading to the multiple news stories.
-
-## Usage
-
-Run main.go:
-
-``go run cmd/news-mill/main.go
-```
-
-### Release v1.0 notes
-The app is still work in progress :)
-
-## Documentation
-
-## Tests
+<p><img src="https://user-images.githubusercontent.com/26469998/143808561-b43f5a60-695f-4375-ba1b-c1b3a97a6df8.png" alt="Newsmill" style="width: 200px;" align="right"></p>
 
 
-## Author
-The Newsmill app is coded by Anthony Webbs
+<p>Newsmill is a simple news service that collects news stories and publishes to users to choose from. A user only need to choose a topic/category! </p>
+
+
