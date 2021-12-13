@@ -4,6 +4,4 @@
 
 <p>Newsmill is a simple news service that collects news stories and publishes to users to choose from. A user only need to choose a topic/category! </p>
 
-<p></p>
-
 
