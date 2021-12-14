@@ -2,10 +2,7 @@ package newsmill
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"sync"
 )
 
@@ -60,7 +57,7 @@ func (s *Service) Start(ctx context.Context) (context.Context, error) {
 
 	}(ctx)
 
-	go s.StateFileLoad()
+	//go s.StateFileLoad()
 
 	return ctx, nil
 
@@ -128,7 +125,6 @@ func (s *Service) Dispatch(ctx context.Context, source <-chan []Article) {
 				}
 
 				s.publish(p)
-				s.saveNews(p[0])
 
 			}
 		}
@@ -157,17 +153,37 @@ func (s *Service) publish(articles []Article) {
 		if ok {
 			temp = append(temp, art)
 			s.subs[t] <- temp
+			//fmt.Println(art)
+			//fmt.Println(temp)
 		}
+		/*temp = append(temp, art)
+		select {
+		case s.subs[t] <- temp:
+		default:
+		}*/
 	}
+	/*category := topic.Category
+	arts := []Article{}
+	if category == "sports" {
+		arts = append(arts, topic)
+	}*/
+
+	//for _, category := range categories {
+	/*t := Subscription(category)
+	select {
+	case s.subs[t] <- append(arts, topic):
+	default:
+	}
+	//}*/
 	s.RUnlock()
 
 }
 
 // Errors will return a channel that can be listened to
 // and can be used to receive errors from the new service.
-func (s *Service) Errors() chan error {
+/*func (s *Service) Errors() chan error {
 	return s.errs
-}
+}*/
 
 //The resources include subscribers and news sources
 func (s *Service) Stop() {
@@ -184,7 +200,7 @@ func (s *Service) Stop() {
 		s.Lock()
 		defer s.Unlock()
 
-		s.StateFileLoad()
+		//s.StateFileLoad()
 
 		s.cancel()
 
@@ -203,12 +219,12 @@ func (s *Service) Stop() {
 }
 
 // Save news articles
-func (s *Service) saveNews(article Article) {
+/*func (s *Service) saveNews(article Article) {
 	s.RLock()
 	s.ProvidedArticles = append(s.ProvidedArticles, article)
 	s.RUnlock()
-}
-
+}*/
+/*
 // StateFileLoad data from a json file.
 func (s *Service) StateFileLoad() error {
 	if s.stateFile == "" {
@@ -253,3 +269,4 @@ func (s *Service) StateFileSave() error {
 
 	return nil
 }
+*/

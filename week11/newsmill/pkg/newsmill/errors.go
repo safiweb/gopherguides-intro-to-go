@@ -30,6 +30,7 @@ func (e ErrNoCategories) Error() string {
 	return fmt.Sprintf("categories must be greater than: %d", e)
 }
 
+/*
 type ErrNoFilePath struct{}
 
 func (ErrNoFilePath) Error() string {
@@ -41,6 +42,7 @@ type ErrNoDirFound struct{}
 func (ErrNoDirFound) Error() string {
 	return "The system cannot find the folder specified"
 }
+*/
 
 type ErrSubscriptionNotFound string
 
@@ -48,12 +50,14 @@ func (e ErrSubscriptionNotFound) Error() string {
 	return fmt.Sprintf("subcription with topic: %v not found", Subscription(e))
 }
 
+/*
 // ErrInvalidTopicCount is returned when the subscription topics count is invalid.
 type ErrInvalidTopicCount int
 
 func (e ErrInvalidTopicCount) Error() string {
 	return fmt.Sprintf("invalid topic(s) count: %d", e)
 }
+*/
 
 // ErrSubscriptionExist is returned when the subscription topics count is invalid.
 type ErrSubscriptionExist string

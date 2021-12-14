@@ -47,7 +47,6 @@ type NewsFeed struct {
 	config      SourceConfig
 	cancel      context.CancelFunc
 	sync.RWMutex
-	once     sync.Once
 	Articles []Article
 }
 
@@ -109,7 +108,6 @@ func (n *NewsFeed) articlesToPublish(cats ...string) ([]Article, error) {
 	for _, article := range articles {
 		for _, cat := range cats {
 			if cat == article.Category {
-				n.config.articlesFile = "News Feed"
 				artToPublish = append(artToPublish, article)
 			}
 		}
@@ -125,26 +123,22 @@ func (n *NewsFeed) articlesToPublish(cats ...string) ([]Article, error) {
 
 // Publisher will return a channel that can be listened to
 // for new articles to be read.
-func (n *NewsFeed) Publisher() chan interface{} {
-	return n.publisherCh
-}
+//func (n *NewsFeed) Publisher() chan interface{} {
+//	return n.publisherCh
+//}
 
 // Close the news feed source
 func (n *NewsFeed) Close() {
 	n.RLock()
 	defer n.RUnlock()
 
-	n.once.Do(func() {
+	n.cancel()
 
-		n.Lock()
-		defer n.Unlock()
+	n.Articles = nil
 
-		n.cancel()
-
-		// close all channels
-		if n.publisherCh != nil {
-			close(n.publisherCh)
-		}
-	})
+	// close all channels
+	if n.publisherCh != nil {
+		close(n.publisherCh)
+	}
 
 }
