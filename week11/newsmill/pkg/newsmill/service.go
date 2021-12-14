@@ -1,0 +1,272 @@
+package newsmill
+
+import (
+	"context"
+	"fmt"
+	"sync"
+)
+
+// Service is responsible for receiving subcriptions and broadcasting new stories to subcribers.
+// Service is also responsible to get and manage new stories sources, create the new stories.
+type Service struct {
+	sync.RWMutex
+	sync.WaitGroup
+	errs             chan error                        // errors channel
+	subs             map[Subscription]chan interface{} // subscriptions channel
+	cancel           context.CancelFunc
+	once             sync.Once
+	stopped          bool
+	Status           bool `json:"status"` // Status
+	stateFile        string
+	ProvidedArticles []Article `json:"articles"` //list of published and subscribed articles
+}
+
+// NewService will create a new Service.
+// ALWAYS to be used to create a new Service
+func NewService() *Service {
+	return &Service{
+		subs:             make(map[Subscription]chan interface{}),
+		errs:             make(chan error),
+		ProvidedArticles: []Article{},
+		stateFile:        "testdata/news/status.json",
+	}
+}
+
+// Start will start dispatching news for the given topics
+func (s *Service) Start(ctx context.Context) (context.Context, error) {
+
+	// create a new cancellation context
+	ctx, cancel := context.WithCancel(ctx)
+
+	// hold onto the cancel function so it can be called
+	// by m.Stop()
+	s.Lock()
+	s.cancel = cancel
+	s.Unlock()
+
+	// launch a goroutine to listen context cancellation
+	go func(ctx context.Context) {
+
+		<-ctx.Done()
+
+		// call the cancel function
+		cancel()
+
+		// call Stop()
+		s.Stop()
+
+	}(ctx)
+
+	//go s.StateFileLoad()
+
+	return ctx, nil
+
+}
+
+// Subscribe a subscriber/subscription to the service
+// Subscribe returns a new channel on which to receive articles on a certain topic.
+func (s *Service) Subscribe(topic Subscription) (<-chan interface{}, error) {
+
+	if err := topic.IsValid(); err != nil {
+		return nil, err
+	}
+
+	s.Lock()
+	if _, ok := s.subs[topic]; ok {
+		return nil, ErrSubscriptionExist(fmt.Sprintf("subscription %s already exist", topic))
+	}
+	s.Unlock()
+
+	s.Lock()
+	ch := make(chan interface{}, 1)
+	s.subs[topic] = ch
+	s.Unlock()
+
+	return ch, nil
+
+}
+
+//  Unsubscribe removes a subscriber from the service
+//  Unsubscribe removes the subscribed topic channel from the subscription
+//  meaning there will be no more news articles sent.
+func (s *Service) Unsubscribe(topic Subscription) error {
+
+	ch, ok := s.subs[topic]
+
+	if !ok {
+		return ErrSubscriptionNotFound(topic)
+	}
+
+	s.Lock()
+	delete(s.subs, topic)
+	close(ch)
+	s.Unlock()
+
+	return nil
+
+}
+
+// Dispatch news articles to subscribers
+// It get news articles from the source publisher channel and dispatches
+func (s *Service) Dispatch(ctx context.Context, source <-chan []Article) {
+
+	go func() {
+		for {
+
+			// listen for messages on different channels
+			select {
+			case <-ctx.Done(): // listen context cancellation
+				return
+			case p, ok := <-source: // listen for a new job
+
+				// check if the channel is closed or not
+				if !ok {
+					continue
+				}
+
+				s.publish(p)
+
+			}
+		}
+	}()
+
+}
+
+// publish publishes new stories to the subscribers
+func (s *Service) publish(articles []Article) {
+
+	s.Lock()
+	if s.stopped {
+		s.Unlock()
+		return
+	}
+	s.Unlock()
+
+	s.RLock()
+	temp := articles[:0]
+	s.RUnlock()
+
+	s.RLock()
+	for _, art := range articles {
+		t := Subscription(art.Category)
+		_, ok := s.subs[t]
+		if ok {
+			temp = append(temp, art)
+			s.subs[t] <- temp
+			//fmt.Println(art)
+			//fmt.Println(temp)
+		}
+		/*temp = append(temp, art)
+		select {
+		case s.subs[t] <- temp:
+		default:
+		}*/
+	}
+	/*category := topic.Category
+	arts := []Article{}
+	if category == "sports" {
+		arts = append(arts, topic)
+	}*/
+
+	//for _, category := range categories {
+	/*t := Subscription(category)
+	select {
+	case s.subs[t] <- append(arts, topic):
+	default:
+	}
+	//}*/
+	s.RUnlock()
+
+}
+
+// Errors will return a channel that can be listened to
+// and can be used to receive errors from the new service.
+/*func (s *Service) Errors() chan error {
+	return s.errs
+}*/
+
+//The resources include subscribers and news sources
+func (s *Service) Stop() {
+
+	s.Lock()
+	if s.stopped {
+		s.Unlock()
+		return
+	}
+	s.Unlock()
+
+	s.once.Do(func() {
+
+		s.Lock()
+		defer s.Unlock()
+
+		//s.StateFileLoad()
+
+		s.cancel()
+
+		s.stopped = true
+
+		// close all channels
+		for _, ch := range s.subs {
+			if ch != nil {
+				close(ch)
+			}
+		}
+
+		close(s.errs)
+
+	})
+}
+
+// Save news articles
+/*func (s *Service) saveNews(article Article) {
+	s.RLock()
+	s.ProvidedArticles = append(s.ProvidedArticles, article)
+	s.RUnlock()
+}*/
+/*
+// StateFileLoad data from a json file.
+func (s *Service) StateFileLoad() error {
+	if s.stateFile == "" {
+		return nil
+	}
+
+	if buf, err := ioutil.ReadFile(s.stateFile); os.IsNotExist(err) {
+		return s.StateFileSave()
+	} else if err != nil {
+		return err
+	} else if err := json.Unmarshal(buf, s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// StateGetJSON returns the state data in json format.
+func (s *Service) StateGetJSON() (string, error) {
+	s.RLock()
+	defer s.RUnlock()
+
+	b, err := json.Marshal(s)
+
+	return string(b), err
+}
+
+// StateFileSave writes out the state file.
+func (s *Service) StateFileSave() error {
+	if s.stateFile == "" {
+		return nil
+	}
+
+	s.RLock()
+	defer s.RUnlock()
+
+	if buf, err := json.Marshal(s); err != nil {
+		return fmt.Errorf("marshaling json: %w", err)
+	} else if err = ioutil.WriteFile(s.stateFile, buf, 0o600); err != nil {
+		return fmt.Errorf("writing file: %w", err)
+	}
+
+	return nil
+}
+*/
